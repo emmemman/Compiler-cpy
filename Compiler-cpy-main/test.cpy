@@ -1,5 +1,5 @@
-#int counterFunctionCalls
-#int counterFunctionCalls2
+#int counterFunctionCalls 
+#int counterFunctionCalls2 
 
 def max3(x,y,z):
 #{
@@ -50,7 +50,7 @@ def isPrime(x):
     global counterFunctionCalls
     counterFunctionCalls = counterFunctionCalls + 1
     i = 2
-    while i < x:
+    while i<x:
     #{
         if divides(i,x) == 1:
             return 0
@@ -121,4 +121,3 @@ while i<=12:
 #}
 
 print(counterFunctionCalls)
-

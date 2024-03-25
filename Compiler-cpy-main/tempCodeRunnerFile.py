@@ -1,1 +1,1 @@
-line
+condition
