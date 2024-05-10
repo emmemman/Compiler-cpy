@@ -3,8 +3,18 @@
 
 funcIDs = []
 IDs=[]
+varIDs=[]
+quadList = []
+tempList = []
 token = ''
+buffer = ''
 line = 1
+
+scopes = []
+scope = []
+
+quadCounter = 1
+tempCounter = 0
 
 # cpy keywords
 keywords = ['main','def','#def','#int','global','if','elif','else','while','print', 'return', 'input', 'int' 'and','or','not']
@@ -194,6 +204,299 @@ def lexical_analyzer():
             
     return lexeme
 
+######################
+# Endiamesos Kwdikas #
+######################
+
+def nextquad():
+    global quadCounter
+    return quadCounter
+
+def genquad(op,x,y,z):
+    global quadList, quadCounter
+    count = nextquad()
+
+    newquad = [count,op,x,y,z]
+    quadList.append(newquad)
+
+    quadCounter+=1
+
+    return newquad
+
+def newtemp():
+    global tempCounter
+    global tempList
+
+    temp = 'T_'
+    tempCounter +=1 
+    temp += str(tempCounter)
+
+    tempList += [temp]
+
+    ent = Entity.Temp(temp, 'tmp', getOffset())
+    newEntity(ent)
+
+    return temp
+
+def emptyList():
+    emptyLst = []
+
+    return emptyLst
+
+def makeList(x):
+    makeLst = [x]
+
+    return makeLst
+
+def merge(list1,list2):
+    mergeLst = []
+    mergeLst += list1 + list2
+
+    return mergeLst
+
+def backpatch(lists,z):
+    global quadList
+
+    for i in range(len(lists)):
+        for j in range(len(quadList)):
+            if lists[i] == quadList[j][0] and quadList[j][4] == '_':
+                quadList[j][4] = z
+                break
+
+def intFile(file):
+    global quadList,buffer
+
+    buffer = ''
+    F = open(file + '.int','w')
+    for i in range(len(quadList)):
+        buffer += str(quadList[i][0]) + ' ' + str(quadList[i][1]) + ' ' + str(quadList[i][2]) + ' ' + str(quadList[i][3]) + ' ' + str(quadList[i][4]) + '\n'
+
+    F.write(buffer + '\n')
+    F.close()
+
+def CFile(file):
+    global quadList,varIDs,buffer
+    
+    F = open(file + '.c','w')
+
+    program_ = []
+    program_.append('int main()\n{')
+
+    buffer = '\n\tint '
+
+    for variable in varIDs:
+        buffer += str(variable) + ','
+
+    program_.append(buffer[:-1] +';\n')
+
+    program_.append('\tL_' + str(quadList[0][0]) + ':\n')
+
+    for q in quadList[1:-1]:
+
+        prog = '\n\tL_' + str(q[0]) + ': '
+
+        if q[1] == ':=':
+            prog += str(q[4]) + ' = ' + str(q[2]) + ';\n'
+        
+        elif q[1] == 'jump':
+            prog += 'goto L_' + str(q[4]) + ';\n'
+        
+        elif q[1] == 'ret':
+            prog += 'return(' + str(q[2]) + ');\n'
+
+        elif q[1] == 'call':
+            prog += '{};\n'
+
+        elif q[1] == 'inp':
+            prog += 'scanf("%d", &' + str(q[2]) + ');\n'
+
+        elif q[1] == 'out':
+            prog += 'printf("%d",' + str(q[2]) + ');\n'
+        
+        elif q[1] == '+' or q[1] == '-' or q[1] == '*' or q[1] == '/':
+            prog += str(q[4]) + ' = ' + str(q[2]) + str(q[1]) + str(q[3]) + ';\n'
+        
+        elif q[1] == '<>' or q[1] == '=' or q[1] == '>' or q[1] == '<' or q[1] == '=>' or q[1] == '=<':
+            relop = q[1]
+            
+            if relop == '<>':
+                relop = '!='
+            
+            if relop == '=':
+                relop = '=='
+
+            prog += 'if (' + str(q[2]) + relop + str(q[3]) + ') goto L_' + str(q[4]) + ';\n'
+        
+        elif q[1] == 'halt':
+            prog += '{};\n'
+        
+        program_.append(prog)
+    program_.append('}')
+    
+    for i in program_:
+        F.write(i)
+    F.close()
+
+################
+# Symbol Table #
+################
+
+class Entity:
+
+    def __init__(self, id, state):
+        self.id = id
+        self.state = state
+        self.scope = -1
+
+    @classmethod
+
+    def Var(wrap, id, state, offset):
+
+        variable = wrap(id, state)
+        variable.offset = offset
+
+        return variable
+
+    @classmethod
+
+    def Sub(wrap, id, state):
+        
+        sub = wrap(id, state)
+        sub.squad = 0
+        sub.args = []
+        sub.length = 0
+
+        return sub
+
+    @classmethod
+
+    def Par(wrap, id, state, mode, offset):
+
+        parameter = wrap(id, state)
+        parameter.mode = mode
+        parameter.offset = offset
+
+        return parameter
+
+    @classmethod
+
+    def Temp(wrap, id, state, offset):
+
+        temp = wrap(id, state)
+        temp.offset = offset
+
+        return temp
+
+def newEntity(entity):
+
+    global scopes
+
+    if scopes:
+            scopes[-1][2].append(entity)
+        
+    print('New Entity: ')
+
+def newScope(identifier):
+    global scopes
+
+    scopes.append([identifier,len(scopes),[]])
+        
+def remScope():
+
+    global scopes
+
+    if scopes: 
+        del scopes[-1]
+            
+def newArg(argument):
+
+    global scopes
+
+    if scopes:
+        if scopes[-1][2]:
+            scopes[-1][2][-1].args.append(argument)
+
+def newParams():
+
+    global scopes
+
+    if len(scopes) > 1:
+        if scopes[-2][2]:
+            for arg in scopes[-2][2][-1].args:
+                parameter = Entity.Par(arg[0], 'prm', arg[2], getOffset())
+                newEntity(parameter)
+        
+def getOffset():
+
+    global scopes
+
+    offset = 12
+
+    if scopes:
+        if scopes[-1][2]:
+            for ent in scopes[-1][2]: 
+                if ent.state == 'var' or ent.state == 'tmp' or ent.state == 'prm':
+                    offset += 4
+
+        return offset
+
+def getLength():
+
+    global scopes
+
+    if len(scopes) > 1:
+        if scopes[-2][2]:
+            scopes[-2][2][-1].length = getOffset()
+
+def getSQuad():
+
+    global scopes
+
+    if len(scopes) > 1:
+        if scopes[-2][2]:
+            scopes[-2][2][-1].squad = nextquad()
+
+def outputSymbFile(file):
+
+    global scopes, buffer
+
+    buffer = ''
+    F = open(file + '.symb', 'a')
+    for scope in reversed(scopes):
+        buffer += '\nScope ' + str(scope[1]) +'\n'
+   
+        for ent in scope[2]:
+                
+            if ent.state == 'var':
+                buffer += '  Variable entity: ' + ent.id +', offset: ' + str(ent.offset) + '\n'
+
+            elif ent.state == 'tmp':
+                buffer += '  Temporary variable entity: ' + ent.id +', offset: ' + str(ent.offset) + '\n'
+
+            elif ent.state == 'prm':
+                buffer += '  Parameter entity: ' + ent.id + ', mode: ' + str(ent.mode) + ', offset: ' + str(ent.offset) + '\n'
+
+            elif ent.state == 'func':
+                buffer += '  Function entity: ' + ent.id + ', starting quad: ' + str(ent.squad) + ', length: ' + str(ent.length) + '\n'
+
+            elif ent.state == 'proc':
+                buffer += '  Procedure entity: ' + ent.id + ', starting quad: ' + str(ent.squad) + ', length: ' + str(ent.length) + '\n'
+
+    F.write(buffer + '\n')
+    F.close()
+
+def search_id(id):
+
+    global scopes
+
+    if scopes:
+
+        for scope in scopes[::-1]:
+
+            for ent in scope[2]:
+                if ent.id == id:
+                    ent.scope = scope
+                    return ent
 
 ###################
 # Syntax Analyzer #
@@ -211,7 +514,7 @@ def notmain():
     while(token == '#int'):
         globals_declare()
     while(token == 'def'):
-        function_def()
+        function()
 
 def globals_declare():
     global token
@@ -226,24 +529,30 @@ def declarations():
     while(token == '#int'):
         formal_pars()
 
-def id_func():
-    global token
-    token = lexical_analyzer()
-    funcIDs.append(token)
+#def id_func():
+#    global token
+#    token = lexical_analyzer()
+#    funcIDs.append(token)
 
-def id_def():
-    global token
-    token = lexical_analyzer()
+#def id_def():
+#    global token
+#    token = lexical_analyzer()
 
 def functions():
      global token
      global counter  
      while(token == 'def'):
-          function_def()
+          function()
 
-def function_def():
-     id_func()
-     global token 
+def function():
+     global token
+     token = lexical_analyzer()
+     function_name = token
+     funcIDs.append(token)
+
+     newScope(function_name)
+     newParams()
+
      token = lexical_analyzer()
      if(token == '('):
           formal_pars()
@@ -253,10 +562,18 @@ def function_def():
                 token = lexical_analyzer()
                 if(token == '#{'):
                         token = lexical_analyzer()                        
-                        declarations()
-                        use_globals()
+                        declarations()    
                         functions()
-                        code_block()                                                 
+                        use_globals()
+
+                        getSQuad()
+                        genquad('begin_block',function_name,"_","_")
+
+                        code_block()       
+
+                        getLength()
+                        genquad('end_block',function_name,"_","_")
+                                          
                         if(token == '#}'):
                             token = lexical_analyzer()
                         else:
@@ -279,13 +596,25 @@ def formal_pars():
     global token
     token = lexical_analyzer()
     if(token in IDs):
-        id_def()
+
+        varIDs.append(token)
+
+        ent = Entity.Var(token, 'var', getOffset())
+        newEntity(ent)
+
+        token = lexical_analyzer()
+
         while(token == ','):
             token = lexical_analyzer()
             if(token in IDs):
-                id_def()		
+                varIDs.append(token)
+
+                ent = Entity.Var(token, 'var', getOffset())
+                newEntity(ent)
+
+                token = lexical_analyzer()		
             else:
-                print("Syntax error in line: "+str(line))
+                print("Error! Needs a legitimate variable ID in line: "+str(line))
                 exit()
 
 def use_globals():
@@ -341,21 +670,37 @@ def code_block_main():
 
 def assignment():
      global token
+     global line
+
+     assgnmnt_ID = token
      token = lexical_analyzer()
      if(token =='='):
-          expression()
+          token = lexical_analyzer()
+          E = expression()
+
+          genquad(':=',E,'_',assgnmnt_ID)
      else:
           print('Expected = at line '+str(line))
           exit()
 		
 def if_stat():
-        condition()
+        global line 
         global token
+        token = lexical_analyzer()
+        B = condition()
+        
         if( token== ":" ):
             token = lexical_analyzer()
+            backpatch(B[0],nextquad())
             code_block()
+
+            iflst = makeList(nextquad())
+            genquad('jump','_','_','_')
+            backpatch(B[1],nextquad())
+
             while(token == "elif"):
                 elif_choice()
+                
             if(token == 'else'):
                 else_choice()
         else:
@@ -364,6 +709,7 @@ def if_stat():
 
 def elif_choice():
     global token
+    token = lexical_analyzer()
     condition()
     if(token == ':'):
         token = lexical_analyzer()
@@ -400,8 +746,11 @@ def print_stat():
           exit()
 
 def while_stat():
-    condition()
     global token
+    global line
+    token = lexical_analyzer()
+    condition()
+    
     if(token == ':'):
         token = lexical_analyzer()
         if(token == '#{'):
@@ -421,30 +770,58 @@ def while_stat():
 
 def expression():
     global token
-    token = lexical_analyzer()
-    optional_sign()
-    term()
+
+    op_s = optional_sign()
+    T1 = term()
+
+    if(op_s == '-'):
+        temp = newtemp()
+        genquad('-',0,T1,temp)
+        T1 = temp
+    
     while(token == '+' or token == '-'):
-        ADD_OP()
-        term()
+        addOp = ADD_OP()
+        T2 = term()
+
+        w = newtemp()
+        genquad(addOp,T1,T2,w)
+        T1 = w
+    
+    return T1
 
 def term():
     global token
-    factor()
+    F1 = factor()
+
     while(token == '*' or token == '//' or token == '%'):
-        MUL_OP()
-        factor()
+        mulOp = MUL_OP()
+        F2 = factor()
+
+        w = newtemp()
+        genquad(mulOp,F1,F2,w) 
+        F1 = w
+
+    return F1
 
 def factor():
     global token
     if(token.isdigit()):
+        F = token
         token = lexical_analyzer()
-
-    elif(token in funcIDs): 
+        return F
+    
+    elif(token in IDs):
+        temp = token
+        token=lexical_analyzer()
+        F = idtail(temp)
+        return F
+    
+    elif(token in funcIDs):
+        temp = token
         token = lexical_analyzer()
 
         if(token == '('):
-    
+            w = newtemp()
             while(token!=')'):
                 actual_par_list()
             token = lexical_analyzer()
@@ -453,9 +830,11 @@ def factor():
             exit()
 
     elif(token=='('):     
-        expression()
+        E = expression()
+
         if(token ==')'):
             token = lexical_analyzer()
+            return E
         else:	
             print("Error! Missing ')' in line "+str(line)) 
             exit()   
@@ -488,10 +867,6 @@ def factor():
             print("Error Missing '(' in line"+str(line))
             exit()
 
-    elif(token in IDs):
-        token = lexical_analyzer()
-        #idtail()
-
     else:
         print("Error! '(' or ID or number expected in line "+str(line))
         exit()
@@ -518,16 +893,24 @@ def bool_factor():
         REL_OP()
         expression()
 
-def idtail():
+def idtail(f_id):
     global token    
     if(token == '('):
         token = lexical_analyzer()
         actual_par_list()
+
+        w = newtemp()
+        genquad('par', w, 'RET', '_')
+        genquad('call', f_id, '_', '_')
         if(token == ')'):
             token = lexical_analyzer()
         else:
             print("Error! Missing ')' in line "+str(line))
-            exit()	
+            exit()
+
+        return w
+    
+    return f_id	
 
 def actual_par_list():
     global token
