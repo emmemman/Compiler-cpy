@@ -238,11 +238,6 @@ def newtemp():
 
     return temp
 
-def emptyList():
-    emptyLst = []
-
-    return emptyLst
-
 def makeList(x):
     makeLst = [x]
 
@@ -548,7 +543,7 @@ def function():
      global token
      token = lexical_analyzer()
      function_name = token
-     funcIDs.append(token)
+     
 
      newScope(function_name)
      newParams()
@@ -669,24 +664,57 @@ def code_block_main():
             exit()
 
 def assignment():
-     global token
-     global line
+    global token
+    global line
 
-     assgnmnt_ID = token
-     token = lexical_analyzer()
-     if(token =='='):
-          token = lexical_analyzer()
-          E = expression()
-
-          genquad(':=',E,'_',assgnmnt_ID)
-     else:
-          print('Expected = at line '+str(line))
-          exit()
+    assgnmnt_ID = token
+    token = lexical_analyzer()
+    if(token in IDs):
+        if(token =='='):
+            token = lexical_analyzer()
+            if(token == 'int'):
+                token = lexical_analyzer()
+                if(token == '('):
+                    token = lexical_analyzer()
+                    if(token == 'input'):
+                        token = lexical_analyzer()
+                        if(token == '('):
+                            token = lexical_analyzer()
+                            if(token == ')'):
+                                token=lexical_analyzer()
+                                if(token == ')'):
+                                    genquad(':=','input','_',assgnmnt_ID)
+                                    token = lexical_analyzer()
+                                else:
+                                    print("Error Missing ')' in line"+str(line))
+                                    exit()
+                            else:
+                                print("Error Missing ')' in line"+str(line))
+                                exit()
+                        else:
+                            print("Error Missing '(' in line "+ str(line))
+                            exit()
+                    else:
+                        print("Error Missing 'input' in line" + str(line))
+                        exit()    
+                else:
+                    print("Error Missing '(' in line"+str(line))
+                    exit()
+            else:
+                E = expression()
+                genquad(':=',E,'_',assgnmnt_ID)
+        else:
+            print('Expected = at line '+str(line))
+            exit()
+    else:
+        print('Error! Variable not fount in line '+str(line))
+        exit()
 		
 def if_stat():
         global line 
         global token
         token = lexical_analyzer()
+
         B = condition()
         
         if( token== ":" ):
@@ -703,6 +731,8 @@ def if_stat():
                 
             if(token == 'else'):
                 else_choice()
+            
+            backpatch(iflst,nextquad())
         else:
             print("Error! Missing ':' in line: "+str(line))	
             exit()
@@ -710,10 +740,19 @@ def if_stat():
 def elif_choice():
     global token
     token = lexical_analyzer()
-    condition()
+
+    B = condition()
+
     if(token == ':'):
         token = lexical_analyzer()
+        backpatch(B[0],nextquad())
         code_block()
+
+        iflst = makeList(nextquad())
+        genquad('jump','_','_','_')
+        backpatch(B[1],nextquad())
+
+        backpatch(iflst,nextquad())
     else:
         print('Error expected ":" at line '+str(line))
 
@@ -728,16 +767,23 @@ def else_choice():
         exit()
     
 def return_stat():
-     global token   
-     expression()
+     global token
+     token = lexical_analyzer()   
+     E = expression()
+     genquad('ret',E,'_','_')
 
 def print_stat():
      global token 
      token = lexical_analyzer()
-     if(token == "("):         
-        expression()
+
+     if(token == "("):
+        token = lexical_analyzer()         
+        E = expression()
+        genquad('out',E,'_','_')
+
         if(token == ")"):
-            token= lexical_analyzer() 
+            token= lexical_analyzer()
+
         else:
             print("Error Missing ')' in line " +str(line))
             exit()
@@ -748,14 +794,23 @@ def print_stat():
 def while_stat():
     global token
     global line
+
     token = lexical_analyzer()
-    condition()
+
+    Bq = nextquad()
+    B = condition()
     
     if(token == ':'):
         token = lexical_analyzer()
         if(token == '#{'):
-            token = lexical_analyzer()               
+            token = lexical_analyzer()      
+            backpatch(B[0],nextquad())
+
             code_block()
+
+            genquad('jump','_','_',Bq)
+            backpatch(B[1],nextquad())
+
             if(token == '#}'):
                 token = lexical_analyzer()
             else:
@@ -815,21 +870,9 @@ def factor():
         token=lexical_analyzer()
         F = idtail(temp)
         return F
-    
-    elif(token in funcIDs):
-        temp = token
-        token = lexical_analyzer()
 
-        if(token == '('):
-            w = newtemp()
-            while(token!=')'):
-                actual_par_list()
-            token = lexical_analyzer()
-        else:
-            print("Error! '(' expected in line "+str(line))
-            exit()
-
-    elif(token=='('):     
+    elif(token=='('):
+        token = lexical_analyzer()     
         E = expression()
 
         if(token ==')'):
@@ -838,63 +881,73 @@ def factor():
         else:	
             print("Error! Missing ')' in line "+str(line)) 
             exit()   
-
-    elif(token == 'int'):
-        token = lexical_analyzer()
-        if(token == '('):
-            token = lexical_analyzer()
-            if(token == 'input'):
-                token = lexical_analyzer()
-                if(token == '('):
-                    token = lexical_analyzer()
-                    if(token == ')'):
-                        token=lexical_analyzer()
-                        if(token == ')'):
-                            token = lexical_analyzer()
-                        else:
-                            print("Error Missing ')' in line"+str(line))
-                            exit()
-                    else:
-                        print("Error Missing ')' in line"+str(line))
-                        exit()
-                else:
-                    print("Error Missing ')' in line "+ str(line))
-                    exit()
-            else:
-                print("Error Missing 'input' in line" + str(line))
-                exit()    
-        else:
-            print("Error Missing '(' in line"+str(line))
-            exit()
-
     else:
         print("Error! '(' or ID or number expected in line "+str(line))
         exit()
 
 def condition():
     global token
-    bool_term()
-    while(token == 'or'):       
-        bool_term()
+
+    Q1 = bool_term()
+
+    conditionT = Q1[0]
+    conditionF = Q1[1]
+
+    while(token=="or"):
+        backpatch(conditionF,nextquad())
+        token=lexical_analyzer()
+        
+        Q2 = bool_term()
+
+        conditionT = merge(conditionT,Q2[0])
+        conditionF = Q2[1]
+
+    return conditionT,conditionF
 
 def bool_term():
     global token
-    bool_factor()	
+    R1 = bool_factor()
+    booltermT = R1[0]
+    booltermF = R1[1]
+
     while(token == 'and'):  
-        bool_factor()
+        backpatch(booltermF,nextquad())
+
+        token =  lexical_analyzer()
+
+        R2 = bool_factor()
+        booltermT = R2[0]
+        booltermF = merge(booltermF,R2[1])
+
+    return booltermT,booltermF
 
 def bool_factor():
     global token
+    global line
+
     if(token == 'not'):
         token = lexical_analyzer()
-        condition()
+        B = condition()
+        boolfactorT = B[1]
+        boolfactorF = B[0]
+        return (boolfactorF,boolfactorT)
+    
     else:
-        expression()
-        REL_OP()
-        expression()
+        E1 = expression()
+        rel_op = REL_OP()
+        E2 = expression()
+
+        Rtrue = makeList(nextquad())
+        genquad(rel_op,E1,E2,'_')
+        Rfalse = makeList(nextquad())
+        genquad('jump','_','_','_')
+
+    return Rtrue,Rfalse
 
 def idtail(f_id):
-    global token    
+    global token
+    global line
+
     if(token == '('):
         token = lexical_analyzer()
         actual_par_list()
