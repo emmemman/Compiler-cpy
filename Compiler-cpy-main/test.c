@@ -1,234 +1,226 @@
 int main()
 {
 	int x,y,z,m,m2,counterFunctionCalls,x,counterFunctionCalls,x,i,x,y,counterFunctionCalls,counterFunctionCalls,x,y,x,counterFunctionCalls,counterFunctionCalls,year,counterFunctionCalls;
-	L_1:
 
-	L_2: T_1 = counterFunctionCalls+1;
+	L_1: T_1 = counterFunctionCalls+1;
 
-	L_3: counterFunctionCalls = T_1;
+	L_2: counterFunctionCalls = T_1;
 
-	L_4: if (x>y) goto L__;
+	L_3: if (x>y) goto L__;
 
-	L_5: goto L_6;
+	L_4: goto L_6;
 
-	L_6: if (x>z) goto L_8;
+	L_5: if (x>z) goto L_8;
 
-	L_7: goto L_10;
+	L_6: goto L_10;
 
-	L_8: m = x;
+	L_7: m = x;
 
-	L_9: goto L_18;
+	L_8: goto L_18;
 
-	L_10: if (y>x) goto L__;
+	L_9: if (y>x) goto L__;
 
-	L_11: goto L_12;
+	L_10: goto L_12;
 
-	L_12: if (y>z) goto L_14;
+	L_11: if (y>z) goto L_14;
 
-	L_13: goto L_16;
+	L_12: goto L_16;
 
-	L_14: m = y;
+	L_13: m = y;
 
-	L_15: goto L_16;
+	L_14: goto L_16;
 
-	L_16: m = z;
+	L_15: m = z;
 
-	L_17: return(m);
+	L_16: return(m);
 
-	L_18: 
-	L_19: 
-	L_20: T_2 = counterFunctionCalls+1;
+	L_19: T_2 = counterFunctionCalls+1;
 
-	L_21: counterFunctionCalls = T_2;
+	L_20: counterFunctionCalls = T_2;
 
-	L_22: if (x<0) goto L_24;
+	L_21: if (x<0) goto L_24;
 
-	L_23: goto L_26;
+	L_22: goto L_26;
 
-	L_24: return(1);
+	L_23: return(1);
 
-	L_25: goto L_40;
+	L_24: goto L_40;
 
-	L_26: 
-	L_27: goto L_28;
+	L_25: if (x=0) goto L_30;
 
-	L_28: 
-	L_29: goto L_32;
+	L_26: goto L_28;
 
-	L_30: return(1);
+	L_27: if (x=1) goto L_30;
 
-	L_31: goto L_32;
+	L_28: goto L_32;
 
-	L_32: T_3 = x-1;
+	L_29: return(1);
 
-	L_33: 
-	L_34: {};
+	L_30: goto L_32;
 
-	L_35: T_5 = x-2;
+	L_31: T_3 = x-1;
 
-	L_36: 
-	L_37: {};
+	L_33: {};
 
-	L_38: T_7 = T_4+T_6;
+	L_34: T_5 = x-2;
 
-	L_39: return(T_7);
+	L_36: {};
 
-	L_40: 
-	L_41: 
-	L_42: T_8 = counterFunctionCalls+1;
+	L_37: T_7 = T_4+T_6;
 
-	L_43: counterFunctionCalls = T_8;
+	L_38: return(T_7);
 
-	L_44: 
-	L_45: T_10 = T_9*x;
+	L_41: T_8 = counterFunctionCalls+1;
 
-	L_46: 
-	L_47: goto L_50;
+	L_42: counterFunctionCalls = T_8;
 
-	L_48: return(1);
+	L_43: if (y//x) goto L_T_9;
 
-	L_49: goto L_51;
+	L_44: T_10 = T_9*x;
 
-	L_50: return(0);
+	L_45: if (y=T_10) goto L_48;
 
-	L_51: 
-	L_52: 
-	L_53: T_11 = counterFunctionCalls+1;
+	L_46: goto L_50;
 
-	L_54: counterFunctionCalls = T_11;
+	L_47: return(1);
 
-	L_55: i = 2;
+	L_48: goto L_51;
 
-	L_56: if (i<x) goto L_58;
+	L_49: return(0);
 
-	L_57: goto L_67;
+	L_52: T_11 = counterFunctionCalls+1;
 
-	L_58: 
-	L_59: {};
+	L_53: counterFunctionCalls = T_11;
 
-	L_60: 
-	L_61: goto L_66;
+	L_54: i = 2;
 
-	L_62: return(0);
+	L_55: if (i<x) goto L_58;
 
-	L_63: T_13 = i+1;
+	L_56: goto L_67;
 
-	L_64: i = T_13;
+	L_58: {};
 
-	L_65: goto L_66;
+	L_59: if (T_12=1) goto L_62;
 
-	L_66: goto L_56;
+	L_60: goto L_66;
 
-	L_67: return(1);
+	L_61: return(0);
 
-	L_68: 
-	L_69: 
-	L_70: T_14 = counterFunctionCalls+1;
+	L_62: T_13 = i+1;
 
-	L_71: counterFunctionCalls = T_14;
+	L_63: i = T_13;
 
-	L_72: T_15 = x*x;
+	L_64: goto L_66;
 
-	L_73: return(T_15);
+	L_65: goto L_56;
 
-	L_74: 
-	L_75: 
-	L_76: T_16 = counterFunctionCalls+1;
+	L_66: return(1);
 
-	L_77: counterFunctionCalls = T_16;
+	L_69: T_14 = counterFunctionCalls+1;
 
-	L_78: 
-	L_79: {};
+	L_70: counterFunctionCalls = T_14;
 
-	L_80: 
-	L_81: {};
+	L_71: T_15 = x*x;
 
-	L_82: T_19 = T_17*T_18;
+	L_72: return(T_15);
 
-	L_83: y = T_19;
+	L_75: T_16 = counterFunctionCalls+1;
 
-	L_84: return(y);
+	L_76: counterFunctionCalls = T_16;
 
-	L_85: 
-	L_86: 
-	L_87: T_20 = counterFunctionCalls+1;
+	L_78: {};
 
-	L_88: counterFunctionCalls = T_20;
+	L_80: {};
 
-	L_89: 
-	L_90: 
-	L_91: goto L_92;
+	L_81: T_19 = T_17*T_18;
 
-	L_92: 
-	L_93: 
-	L_94: goto L_95;
+	L_82: y = T_19;
 
-	L_95: 
-	L_96: 
-	L_97: goto L_100;
+	L_83: return(y);
 
-	L_98: return(1);
+	L_86: T_20 = counterFunctionCalls+1;
 
-	L_99: goto L_101;
+	L_87: counterFunctionCalls = T_20;
 
-	L_100: return(0);
+	L_88: if (year%4) goto L_T_21;
 
-	L_101: 
+	L_89: if (T_21=0) goto L__;
+
+	L_90: goto L_92;
+
+	L_91: if (year%100) goto L_T_22;
+
+	L_92: if (T_22!=0) goto L_98;
+
+	L_93: goto L_95;
+
+	L_94: if (year%400) goto L_T_23;
+
+	L_95: if (T_23=0) goto L_98;
+
+	L_96: goto L_100;
+
+	L_97: return(1);
+
+	L_98: goto L_101;
+
+	L_99: return(0);
+
 	L_102: counterFunctionCalls = 0;
 
 	L_103: i = input;
 
-	L_104: printf("%d",i);
+	L_104: print("%d",i);
 
 	L_105: i = 1600;
 
-	L_106: 
-	L_107: goto L_114;
+	L_106: if (i<=2000) goto L_109;
 
-	L_108: 
+	L_107: goto L_115;
+
 	L_109: {};
 
-	L_110: printf("%d",T_24);
+	L_110: print("%d",T_24);
 
 	L_111: T_25 = i+400;
 
 	L_112: i = T_25;
 
-	L_113: goto L_106;
+	L_113: goto L_107;
 
-	L_114: 
 	L_115: {};
 
-	L_116: printf("%d",T_26);
+	L_116: print("%d",T_26);
 
-	L_117: 
 	L_118: {};
 
-	L_119: printf("%d",T_27);
+	L_119: print("%d",T_27);
 
-	L_120: 
 	L_121: {};
 
-	L_122: printf("%d",T_28);
+	L_122: print("%d",T_28);
 
-	L_123: 
 	L_124: {};
 
-	L_125: printf("%d",T_29);
+	L_125: print("%d",T_29);
 
 	L_126: i = 1;
 
-	L_127: 
-	L_128: goto L_135;
+	L_127: if (i<=12) goto L_130;
 
-	L_129: 
+	L_128: goto L_136;
+
 	L_130: {};
 
-	L_131: printf("%d",T_30);
+	L_131: print("%d",T_30);
 
 	L_132: T_31 = i+1;
 
 	L_133: i = T_31;
 
-	L_134: goto L_127;
+	L_134: goto L_128;
+
+	L_135: print("%d",counterFunctionCalls);
+
+	L_136: {};
 }

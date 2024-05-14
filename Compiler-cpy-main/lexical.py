@@ -202,12 +202,11 @@ def lexical_analyzer():
                 print("Error at line "+ str(line))
                 exit()   
     
-    print('THIS IS LEXEMEMEMEMEMEMEM   '+str(lexeme))
     return lexeme
 
-######################
-# Endiamesos Kwdikas #
-######################
+#####################
+# Intermediate Code #
+#####################
 
 def nextquad():
     global quadCounter
@@ -221,7 +220,6 @@ def genquad(op,x,y,z):
     quadList.append(newquad)
 
     quadCounter+=1
-    print('i gened a quad '+str(newquad))
     return newquad
 
 def newtemp():
@@ -258,7 +256,6 @@ def backpatch(lists,z):
             if lists[i] == quadList[j][0] and quadList[j][4] == '_':
                 quadList[j][4] = z
                 break
-    print('i backpatched this '+str(quadList[j]))
 
 def intFile(file):
     global quadList,buffer
@@ -286,46 +283,40 @@ def CFile(file):
 
     program_.append(buffer[:-1] +';\n')
 
-    program_.append('\tL_' + str(quadList[0][0]) + ':\n')
 
-    for q in quadList[1:-1]:
+    for q in quadList[0:-1]:
 
-        prog = '\n\tL_' + str(q[0]) + ': '
+        prog = ''
+        L = '\n\tL_' + str(q[0]-1)  + ': '
 
         if q[1] == ':=':
-            prog += str(q[4]) + ' = ' + str(q[2]) + ';\n'
+            prog += L + str(q[4]) + ' = ' + str(q[2]) + ';\n'
         
         elif q[1] == 'jump':
-            prog += 'goto L_' + str(q[4]) + ';\n'
+            prog += L + 'goto L_' + str(q[4]) + ';\n'
         
         elif q[1] == 'ret':
-            prog += 'return(' + str(q[2]) + ');\n'
+            prog += L +'return(' + str(q[2]) + ');\n'
 
         elif q[1] == 'call':
-            prog += '{};\n'
-
-        elif q[1] == 'inp':
-            prog += 'scanf("%d", &' + str(q[2]) + ');\n'
+            prog += L + '{};\n'
 
         elif q[1] == 'out':
-            prog += 'printf("%d",' + str(q[2]) + ');\n'
+            prog += L + 'print("%d",' + str(q[2]) + ');\n'
         
         elif q[1] == '+' or q[1] == '-' or q[1] == '*' or q[1] == '/':
-            prog += str(q[4]) + ' = ' + str(q[2]) + str(q[1]) + str(q[3]) + ';\n'
+            prog += L + str(q[4]) + ' = ' + str(q[2]) + str(q[1]) + str(q[3]) + ';\n'
         
-        elif q[1] == '<>' or q[1] == '=' or q[1] == '>' or q[1] == '<' or q[1] == '=>' or q[1] == '=<':
+        elif q[1] == '!=' or q[1] == '==' or q[1] == '>' or q[1] == '<' or q[1] == '>=' or q[1] == '<=' or q[1] == '%' or q[1] == '//':
             relop = q[1]
             
-            if relop == '<>':
-                relop = '!='
-            
-            if relop == '=':
-                relop = '=='
+            if(q[1] == '=='):
+                relop = '='
 
-            prog += 'if (' + str(q[2]) + relop + str(q[3]) + ') goto L_' + str(q[4]) + ';\n'
+            prog += L + 'if (' + str(q[2]) + relop + str(q[3]) + ') goto L_' + str(q[4]) + ';\n'
         
         elif q[1] == 'halt':
-            prog += '{};\n'
+            prog += L + '{};\n'
         
         program_.append(prog)
     program_.append('}')
@@ -344,6 +335,7 @@ class Entity:
         self.id = id
         self.state = state
         self.scope = -1
+        self.args = []
 
     @classmethod
 
@@ -391,7 +383,6 @@ def newEntity(entity):
     if scopes:
             scopes[-1][2].append(entity)
         
-    print('New Entity: '+str(entity))
 
 def newScope(identifier):
     global scopes
@@ -503,6 +494,7 @@ def search_id(id):
 def program():
     notmain()    
     main()
+    
     print("Syntax Analysis Successful! \n")
 
 def notmain():
@@ -526,15 +518,6 @@ def declarations():
     while(token == '#int'):
         formal_pars()
 
-#def id_func():
-#    global token
-#    token = lexical_analyzer()
-#    funcIDs.append(token)
-
-#def id_def():
-#    global token
-#    token = lexical_analyzer()
-
 def functions():
      global token
      global counter  
@@ -548,7 +531,7 @@ def function():
      
 
      newScope(function_name)
-     #newParams()
+     newParams()
 
      token = lexical_analyzer()
      if(token == '('):
@@ -644,7 +627,6 @@ def code_block():
 
 def code_block_main():
      global token
-     print('-MAIN-code block main starts '+str(token))
      while(token!=''):
         if (token in IDs):
             assignment()
@@ -667,11 +649,12 @@ def code_block_main():
             exit()
 
 def assignment():
+
     global token
     global line
-    print('assign this '+str(token))
     assgnmnt_ID = token
     token = lexical_analyzer()
+
     if(token == '='):
         token = lexical_analyzer()
            
@@ -714,22 +697,20 @@ def assignment():
         exit()
 		
 def if_stat():
+        
         global line 
         global token
         token = lexical_analyzer()
-        print('if started with '+str(token))
         B = condition()
         
         if( token== ":" ):
             token = lexical_analyzer()
             backpatch(B[0],nextquad())
-            print('we go into code block ' +str(token))
             code_block()
 
             iflst = makeList(nextquad())
             genquad('jump','_','_','_')
             backpatch(B[1],nextquad())
-            print('is token elif????' +str(token))
             while(token == "elif"):
                 elif_choice()
                 
@@ -787,7 +768,6 @@ def print_stat():
 
         if(token == ")"):
             token= lexical_analyzer()
-            print('print completet')
 
         else:
             print("Error Missing ')' in line " +str(line))
@@ -804,13 +784,13 @@ def while_stat():
 
     Bq = nextquad()
     B = condition()
-    print('while starts with '+str(token))
+
     if(token == ':'):
         token = lexical_analyzer()
         if(token == '#{'):
             token = lexical_analyzer()      
             backpatch(B[0],nextquad())
-            print('--while code block with '+str(token))
+
             code_block()
 
             genquad('jump','_','_',Bq)
@@ -830,7 +810,7 @@ def while_stat():
 
 def expression():
     global token
-    print('express this '+str(token))
+
     op_s = optional_sign()
     T1 = term()
 
@@ -846,7 +826,7 @@ def expression():
         w = newtemp()
         genquad(addOp,T1,T2,w)
         T1 = w
-    print('term 1 is '+str(T1))
+
     return T1
 
 def term():
@@ -865,20 +845,22 @@ def term():
 
 def factor():
     global token
-    print('--factor this '+str(token))
+
     if(token.isdigit()):
+
         F = token
         token = lexical_analyzer()
         return F
     
     elif(token in IDs):
+
         temp = token
-        print('--factor this ID'+str(token))
         token=lexical_analyzer()
         F = idtail(temp)
         return F
 
     elif(token=='('):
+
         token = lexical_analyzer()     
         E = expression()
 
@@ -899,7 +881,7 @@ def condition():
 
     conditionT = Q1[0]
     conditionF = Q1[1]
-    print('condition true false '+str(conditionT)+str(conditionF))
+
     while(token=="or"):
         backpatch(conditionF,nextquad())
         token=lexical_analyzer()
@@ -931,7 +913,7 @@ def bool_term():
 def bool_factor():
     global token
     global line
-    print('bool factor this '+str(token))
+
     if(token == 'not'):
         token = lexical_analyzer()
         B = condition()
@@ -974,7 +956,6 @@ def idtail(f_id):
 
 def actual_par_list():
     global token
-    print('actual par list this '+str(token))
     expression()
     while(token==','):
         token = lexical_analyzer()
@@ -1010,7 +991,6 @@ def MUL_OP():
 
 def REL_OP():
     global token
-    print('relop this '+ str(token))
     if token == '==':
         relop = '=='
     elif token == '<=':
@@ -1034,8 +1014,11 @@ def main():
     if(token == '#def'):
             token = lexical_analyzer()
             if(token == 'main'):
+                genquad('begin_block','main','_','_')
                 token = lexical_analyzer() 
                 code_block_main()
+                genquad('halt','_','_','_')
+                genquad('end_block','main','_','_')
             else:
                 print('Error expected main at line ' +str(line))
                 exit()          
