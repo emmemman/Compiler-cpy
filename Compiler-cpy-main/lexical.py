@@ -19,6 +19,7 @@ tempCounter = 0
 # cpy keywords
 keywords = ['main','def','#def','#int','global','if','elif','else','while','print', 'return', 'input', 'int' 'and','or','not']
 
+cond = ['<','>','<=','>=','<>','=']
 
 ####################
 # Lexical Analyzer #
@@ -332,6 +333,7 @@ def CFile(file):
 class Entity:
 
     def __init__(self, id, state):
+        global scopes
         self.id = id
         self.state = state
         self.scope = -1
@@ -383,7 +385,6 @@ def newEntity(entity):
     if scopes:
             scopes[-1][2].append(entity)
         
-
 def newScope(identifier):
     global scopes
 
@@ -449,7 +450,7 @@ def outputSymbFile(file):
     global scopes, buffer
 
     buffer = ''
-    F = open(file + '.symb', 'a')
+    F = open(file + '.symb', 'w')
     for scope in reversed(scopes):
         buffer += '\nScope ' + str(scope[1]) +'\n'
    
@@ -474,17 +475,234 @@ def outputSymbFile(file):
     F.close()
 
 def search_id(id):
-
     global scopes
-
     if scopes:
-
         for scope in scopes[::-1]:
-
+            #print('this is scope '+ str(scope[0])+' 3 '+ str(scope[2]))
             for ent in scope[2]:
                 if ent.id == id:
                     ent.scope = scope
                     return ent
+                #else:
+                 #   print('this is end.id '+ str(ent.id))
+                 #   print('this is end.scope '+ str(ent.scope))
+                 #   print('this is scope '+ str(scope))
+    else:
+        print('SCODESCODDD')
+
+def display_scopes(entity):
+    for scope in entity.scopes:
+        print(f'Scope {scope.id}')
+        for ent in scope.entities:
+                if ent.state == 'Variable':
+                    print(f'  Variable entity: {ent.id}, offset: {ent.offset}')
+                elif ent.state == 'Temporary':
+                    print(f'  Temporary variable entity: {ent.id}, offset: {ent.offset}')
+                elif ent.state == 'Parameter':
+                    print(f'  Parameter entity: {ent.id}, mode: {ent.mode}, offset: {ent.offset}')
+                elif ent.state == 'Function':
+                    print(f'  Function entity: {ent.id}, starting quad: {ent.squad}, length: {ent.length}')
+                elif ent.state == 'Procedure':
+                    print(f'  Procedure entity: {ent.id}, starting quad: {ent.squad}, length: {ent.length}')
+        print('-' * 30)
+
+
+def printScopes():
+    global scopes
+    for i in range(len(scopes)):
+        for j in range(len(scopes[i])):
+            print('Scopes :'+ str(i) +'  -  '+ str(j) + 'what '+str(scopes[i][j]))
+          
+
+def printScope():
+    global scope
+    for i in range(len(scope)):
+            print('scope scoop??')
+            print('Scope scoppp:'+ str(i) +'  -  '+str(scope[i]))
+
+##############
+# Final Code #
+##############
+
+def gnvlcode(v):
+    global buffer ,scopes
+    buffer += ' lw $t0, -4($sp) \n'
+
+    lvl = scopes[-1][1] - v.scope[1] - 1
+
+    for i in range(0,lvl):
+        buffer += ' lw $t0,-4($t0)\n'
+
+    buffer += ' addi  $t0, $t0, -' + str(v.offset) + '\n'
+
+def loadvr(v,reg):
+    global buffer, scopes
+
+    if v.isdigit():
+        buffer += ' li ' + str(reg) + ', ' + str(v) + '\n'
+        
+    else:
+        e = search_id(v)
+        if e.scope[1] == 0 and (e.state == 'var' or e.state == 'tmp'):
+            buffer += ' lw ' + reg + ', -' + str(e.offset) + '($gp)\n'
+
+        elif e.scope[1] == scopes[-1][1]:
+                    
+            if e.state == 'var' or e.state == 'tmp' or (e.state == 'prm' and e.mode == 'in'):
+                buffer += ' lw ' + reg + ', -' + str(e.offset) + '($sp)\n'
+
+            elif e.state == 'prm' and e.mode == 'inout':
+                buffer += ' lw $t0, -' + str(e.offset) + '($sp)\n lw ' + reg + ', ($t0)\n'
+
+        elif e.scope[1] < scopes[-1][1]:
+                        
+            if e.state == 'var' or (e.state == 'prm' and e.mode == 'in'):
+                gnvlcode(e)
+                buffer += ' lw ' + reg + ', ($t0)\n'
+
+            elif e.state == 'prm' and e.mode == 'inout':
+                gnvlcode(e)
+                buffer += ' lw $t0, ($t0)\n lw ' + reg + ', ($t0)\n'
+
+def storerv(reg,v):
+
+    global scopes, buffer
+    e = search_id(v)
+    if str(v).isdigit():
+        buffer += ' li ' + str(reg) + ', ' + str(v) + '\n'
+    else:
+        if e.scope[1] == 0 and (e.state == 'var' or e.state == 'tmp'):
+            buffer += ' sw ' + reg + ', -' + str(e.offset) + '($gp)\n'
+        
+        elif e.scope[1] == scopes[-1][1]:
+
+                if e.state == 'var' or e.state == 'tmp' or (e.state == 'prm' and e.mode == 'in'):
+                    buffer += ' sw ' + reg + ', -' + str(e.offset) + '($sp)\n'
+
+                elif e.state == 'prm' and e.mode == 'inout':
+                    buffer += ' lw $t0, -' + str(e.offset) + '($sp)\n sw ' + reg + ', ($t0)\n'
+
+        elif e.scope[1] < scopes[-1][1]:
+
+            if e.state == 'var' or (e.state == 'prm' and e.mode == 'in'):
+                gnvlcode(e)
+                buffer += ' sw ' + reg + ', ($t0)\n'
+
+            elif e.state == 'prm' and e.mode == 'inout':
+                gnvlcode(e)
+                buffer += ' lw $t0, ($t0)\n sw ' + reg + ', ($t0)\n'
+
+def generateFinalCode(file):
+    
+    global quadList,buffer
+    index = 0
+    buffer = ''
+    st = -1
+    F = open(file + '.asm', 'w')
+    buffer += 'L_0:\n b Lmain\n'
+    for q in quadList:
+        index+=1
+        buffer += 'L_' + str(q[0]) + ':\n'
+        if q[1] == ':=':
+            loadvr(q[2], '$t1')
+            storerv('$t1', q[4])
+
+        elif q[1] == '+' or q[1] == '-' or q[1] == '*' or q[1] == '/':
+            loadvr(q[2], '$t1')
+            loadvr(q[3], '$t2')
+
+            if q[1] == '+':
+                buffer += ' add $t1, $t1, $t2\n'
+            elif q[1] == '-':
+                buffer += ' sub $t1, $t1, $t2\n'
+            elif q[1] == '*':
+                buffer += ' mul $t1, $t1, $t2\n'
+            elif q[1] == '/':
+                buffer += ' div $t1, $t1, $t2\n'
+            storerv('$t1', q[4])
+
+        elif q[1] in cond:
+            loadvr(q[2], '$t1')
+            loadvr(q[3], '$t2')
+
+            if q[1] == '<':
+                buffer += ' blt $t1, $t2, L_' + str(q[4]) + '\n'
+            elif q[1] == '>':
+                buffer += ' bgt $t1, $t2, L_' + str(q[4]) + '\n'
+            elif q[1] == '<=':
+                buffer += ' ble $t1, $t2, L_' + str(q[4]) + '\n'
+            elif q[1] == '>=':
+                buffer += ' bge $t1, $t2, L_' + str(q[4]) + '\n'
+            elif q[1] == '<>':
+                buffer += ' bne $t1, $t2, L_' + str(q[4]) + '\n'
+            elif q[1] == '=':
+                buffer += ' beg $t1, $t2, L_' + str(q[4]) + '\n'
+        
+        elif q[1] == 'jump':
+            buffer += ' j L_'+str(q[2])+'\n'
+
+        elif q[1] == 'inp':
+            buffer += 'li $a7, 5 \necall'+str(q[2])+'\n'
+            storerv('$a7', q[2])
+
+        elif q[1] == 'out':
+            loadvr(q[2], '$a0')
+            buffer += ' li $a7, 1\n'
+            buffer += ' ecall\n'
+
+        elif q[1] == 'ret':
+            loadvr(q[2], '$t1')
+            buffer += ' lw $t0, -8($sp)\n sw $t1,($t0)\n'
+
+        elif q[1] == 'halt':
+            continue
+
+        elif q[1] == 'call':
+
+            st = -1
+            e = search_id(q[2])
+            if e.scope[1] == scopes[-1][1]:
+                buffer += ' lw $t0, -4($sp)\n sw $t0, -4($fp)\n'
+            else:
+                buffer += ' sw $t0, -4($fp)\n'
+
+            buffer += ' addi $sp, $sp ,' + str(e.length) + '\n jal L_'+ str(e.squad) + '\n addi $sp, $sp , -' + str(e.length) + '\n'
+        
+        elif q[1] == 'begin_block':
+            if scopes[-1][1] == 0:
+                buffer += ' add $sp, $sp ' + str(getOffset()) + '\n move $gp, $sp \n'
+            else:
+                buffer += ' sw $ra, -0($sp)\n'
+
+        elif q[1] == 'end_block':
+            buffer += ' lw $ra ,-0($sp) \n jr $ra\n'
+
+        elif q[1] == 'par':
+            if st == -1:
+                e = search_id(q[2])
+                st = 0
+            if q[3] == 'CV':
+                loadvr(q[2],'$t0')
+                buffer += ' addi $fp, $sp, ' + str(e.id) + '\n'
+                buffer += ' sw $t0, -' + str(12+4*st) + '($fp)\n'
+                st += 1
+            elif q[3] == 'RET' or q[3] == 'REF':
+                e = search_id(q[2])
+                if e.scope[1] == scopes[-1][1]:
+                    buffer += ' addi $t0, $sp, -' + str(e.offset) + '\n' 
+            
+                    buffer += ' sw $t0, -'+str(12+4*st)+'($fp)\n' 
+                elif e.scope[1] < scopes[-1][1]:
+                    gnvlcode(e)
+
+                    if e.state == 'prm' and e.mode == 'inout':
+                        buffer += ' lw $t0, ($t0)\n'
+                        
+                    buffer += ' sw $t0, -%d($fp)\n' % (12+4*st)
+
+
+    F.write(buffer + '\n')
+
 
 ###################
 # Syntax Analyzer #
@@ -494,29 +712,26 @@ def search_id(id):
 def program():
     notmain()    
     main()
-    
     print("Syntax Analysis Successful! \n")
 
 def notmain():
     global token
-    token = lexical_analyzer()
-    while(token == '#int'):
-        globals_declare()
-    while(token == 'def'):
-        function()
+    
+    globals_declare()
+    functions()
 
 def globals_declare():
     global token
-    token = lexical_analyzer()
-    if(token not in IDs):
-        print('Error not valid global var name on line'+str(line))
-        exit()
-    token = lexical_analyzer()
+    token = lexical_analyzer()   
+    newScope('global scope')
+    newParams()
+    while(token == '#int'):
+        id_list()
 
 def declarations():
     global token
     while(token == '#int'):
-        formal_pars()
+        id_list()
 
 def functions():
      global token
@@ -535,7 +750,7 @@ def function():
 
      token = lexical_analyzer()
      if(token == '('):
-          formal_pars()
+          id_list()
           if(token == ')'):
                token = lexical_analyzer()
                if(token == ':'):
@@ -553,6 +768,7 @@ def function():
 
                         getLength()
                         genquad('end_block',function_name,"_","_")
+                        generateFinalCode(filename)
                                           
                         if(token == '#}'):
                             token = lexical_analyzer()
@@ -572,14 +788,16 @@ def function():
          print('Errorr! missing "(" in line '+str(line))
          exit()
 
-def formal_pars():
+def id_list():
     global token
     token = lexical_analyzer()
     if(token in IDs):
 
         varIDs.append(token)
 
+
         ent = Entity.Var(token, 'var', getOffset())
+        print('im in id list and the new entity is '+ str(token))
         newEntity(ent)
 
         token = lexical_analyzer()
@@ -600,7 +818,7 @@ def formal_pars():
 def use_globals():
     global token
     while(token == 'global'):
-        formal_pars()
+        id_list()
 
 def code_block():
      global token
@@ -616,7 +834,7 @@ def code_block():
         elif(token == 'print'):
             print_stat()
         elif(token == 'global' or token == '#int'):
-            globals_declare()
+            declarations()
         elif(token == 'elif'):
             break
         elif(token == 'else'):
@@ -639,7 +857,7 @@ def code_block_main():
         elif(token == 'print'):
             print_stat()
         elif(token == 'global' or token == '#int'):
-            globals_declare()
+            declarations()
         elif(token == 'elif'):
             break
         elif(token == 'else'):
@@ -653,6 +871,7 @@ def assignment():
     global token
     global line
     assgnmnt_ID = token
+    print(str(token))
     token = lexical_analyzer()
 
     if(token == '='):
@@ -693,7 +912,7 @@ def assignment():
             print('Error! Variable not fount in line '+str(line))
             exit()
     else:
-        print('Expected = at line '+str(line))
+        print('Expected = at line '+str(line) + ' and i got '+str(token))
         exit()
 		
 def if_stat():
@@ -1028,7 +1247,6 @@ def main():
 
 
 
-
 f = open('test.cpy')
 filename = 'test'
 program()
@@ -1042,4 +1260,13 @@ print("Outputed .c file in dir, with name " + filename + ".c \n")
 
 outputSymbFile(filename)
 print("Outputed .symb file in dir, with name " + filename + ".symb \n")
+print('----------------------------------')
+#printScopes()
+#printScope()
+
+
+print('quad list '+ str(quadList[0][0])+' '+  str(quadList[0][1])+ ' '+str(quadList[0][2])+ ' '+str(quadList[0][3])+ ' '+ str(quadList[0][4]))
+search_id(quadList[0][1])
+print('----------------------------------')
+
 remScope()

@@ -1,21 +1,22 @@
 
-Scope 6
+Scope 7
   Variable entity: year, offset: 12
   Variable entity: counterFunctionCalls, offset: 16
   Temporary variable entity: T_20, offset: 20
   Temporary variable entity: T_21, offset: 24
   Temporary variable entity: T_22, offset: 28
   Temporary variable entity: T_23, offset: 32
-  Temporary variable entity: T_24, offset: 36
-  Temporary variable entity: T_25, offset: 40
-  Temporary variable entity: T_26, offset: 44
-  Temporary variable entity: T_27, offset: 48
-  Temporary variable entity: T_28, offset: 52
-  Temporary variable entity: T_29, offset: 56
-  Temporary variable entity: T_30, offset: 60
-  Temporary variable entity: T_31, offset: 64
+  Variable entity: i, offset: 36
+  Temporary variable entity: T_24, offset: 40
+  Temporary variable entity: T_25, offset: 44
+  Temporary variable entity: T_26, offset: 48
+  Temporary variable entity: T_27, offset: 52
+  Temporary variable entity: T_28, offset: 56
+  Temporary variable entity: T_29, offset: 60
+  Temporary variable entity: T_30, offset: 64
+  Temporary variable entity: T_31, offset: 68
 
-Scope 5
+Scope 6
   Variable entity: x, offset: 12
   Variable entity: counterFunctionCalls, offset: 16
   Temporary variable entity: T_14, offset: 20
@@ -26,11 +27,11 @@ Scope 5
   Temporary variable entity: T_18, offset: 40
   Temporary variable entity: T_19, offset: 44
 
-Scope 4
+Scope 5
   Variable entity: x, offset: 12
   Variable entity: y, offset: 16
 
-Scope 3
+Scope 4
   Variable entity: x, offset: 12
   Variable entity: y, offset: 16
   Variable entity: counterFunctionCalls, offset: 20
@@ -42,11 +43,11 @@ Scope 3
   Temporary variable entity: T_12, offset: 44
   Temporary variable entity: T_13, offset: 48
 
-Scope 2
+Scope 3
   Variable entity: x, offset: 12
   Variable entity: i, offset: 16
 
-Scope 1
+Scope 2
   Variable entity: x, offset: 12
   Variable entity: counterFunctionCalls, offset: 16
   Temporary variable entity: T_2, offset: 20
@@ -56,7 +57,7 @@ Scope 1
   Temporary variable entity: T_6, offset: 36
   Temporary variable entity: T_7, offset: 40
 
-Scope 0
+Scope 1
   Variable entity: x, offset: 12
   Variable entity: y, offset: 16
   Variable entity: z, offset: 20
@@ -64,4 +65,8 @@ Scope 0
   Variable entity: m2, offset: 28
   Variable entity: counterFunctionCalls, offset: 32
   Temporary variable entity: T_1, offset: 36
+
+Scope 0
+  Variable entity: counterFunctionCalls, offset: 12
+  Variable entity: counterFunctionCalls2, offset: 16
 
